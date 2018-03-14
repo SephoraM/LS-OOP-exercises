@@ -1,20 +1,24 @@
 class Card
-  include Comparable
   attr_reader :rank, :suit
+  include Comparable
 
-  RANKING = (2..10).to_a + %w(Jack Queen King Ace).freeze
+  VALUES = { 'Jack' => 11, 'Queen' => 12, 'King' => 13, 'Ace' => 14 }
 
   def initialize(rank, suit)
     @rank = rank
     @suit = suit
   end
 
-  def <=>(other)
-    RANKING.index(rank) <=> RANKING.index(other.rank)
-  end
-
   def to_s
     "#{rank} of #{suit}"
+  end
+
+  def value
+    VALUES.fetch(@rank, @rank)
+  end
+
+  def <=>(other_card)
+    value <=> other_card.value
   end
 end
 
@@ -55,6 +59,8 @@ class PokerHand
   def initialize(deck)
     @hand = []
     5.times { @hand << deck.draw }
+    @sorted_hand = @hand.sort
+    @all_rankings = num_of_each
   end
 
   def print
@@ -77,32 +83,52 @@ class PokerHand
   end
 
   private
+  attr_reader :sorted_hand, :all_rankings
+
+  def num_of_each
+    sorted_hand.map { |card| sorted_hand.count(card) }
+  end
 
   def royal_flush?
+    straight_flush? && sorted_hand[0].value == 10
   end
 
   def straight_flush?
+    flush? && straight?
   end
 
   def four_of_a_kind?
+    all_rankings.count(4) == 4
   end
 
   def full_house?
+    three_of_a_kind? && pair?
   end
 
   def flush?
+    suit_test = sorted_hand[0].suit
+    sorted_hand.all? { |card| card.suit == suit_test }
   end
 
   def straight?
+    tester = sorted_hand[0].value
+    5.times do |idx|
+      return false if tester != sorted_hand[idx].value
+      tester += 1
+    end
+    true
   end
 
   def three_of_a_kind?
+    all_rankings.count(3) == 3
   end
 
   def two_pair?
+    all_rankings.count(2) == 4
   end
 
   def pair?
+    all_rankings.count(2) == 2
   end
 end
 
